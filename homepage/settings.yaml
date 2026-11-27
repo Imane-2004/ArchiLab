@@ -1,0 +1,17 @@
+title: ArchiLab
+description: Portail Architecture SI et DevOps
+theme: dark
+color: slate
+headerStyle: boxed
+language: fr
+
+layout:
+  Developpement et DevOps:
+    style: row
+    columns: 2
+  Outils informatiques:
+    style: row
+    columns: 2
+  Supervision:
+    style: row
+    columns: 2

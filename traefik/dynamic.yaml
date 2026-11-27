@@ -1,0 +1,26 @@
+tls:
+  certificates:
+    - certFile: /certs/archilab.pem
+      keyFile: /certs/archilab-key.pem
+
+http:
+  routers:
+    vaultwarden:
+      rule: "Host(`vaultwarden.localhost`)"
+      entryPoints:
+        - websecure
+      service: vaultwarden
+      tls: {}
+
+    traefik-dashboard:
+      rule: "Host(`localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      entryPoints:
+        - websecure
+      service: api@internal
+      tls: {}
+
+  services:
+    vaultwarden:
+      loadBalancer:
+        servers:
+          - url: "http://vaultwarden:80"

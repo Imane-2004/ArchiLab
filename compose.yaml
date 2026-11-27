@@ -1,0 +1,154 @@
+services:
+  it-tools:
+    image: corentinth/it-tools:latest
+    container_name: archilab-it-tools
+    ports:
+      - "127.0.0.1:8082:80"
+    restart: unless-stopped
+    networks:
+      - archilab-network
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: archilab-monitoring
+    ports:
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - kuma-data:/app/data
+    restart: unless-stopped
+    networks:
+      - archilab-network
+
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: archilab-gitlab
+    hostname: gitlab
+    restart: unless-stopped
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://localhost:8929'
+        puma['worker_processes'] = 0
+        sidekiq['concurrency'] = 5
+        prometheus_monitoring['enable'] = false
+    ports:
+      - "127.0.0.1:8929:8929"
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+    shm_size: '256m'
+    networks:
+      - archilab-network
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: archilab-runner
+    restart: unless-stopped
+    volumes:
+      - runner-config:/etc/gitlab-runner
+    networks:
+      - archilab-network
+
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: archilab-homepage
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3005:3000"
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: "localhost:3005,127.0.0.1:3005"
+    volumes:
+      - ./homepage:/app/config
+    networks:
+      - archilab-network
+
+  drawio:
+    image: jgraph/drawio:latest
+    container_name: archilab-drawio
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8083:8080"
+    networks:
+      - archilab-network
+
+  netdata:
+    image: netdata/netdata:latest
+    container_name: archilab-netdata
+    hostname: archilab
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:19999:19999"
+    volumes:
+      - netdata-config:/etc/netdata
+      - netdata-lib:/var/lib/netdata
+      - netdata-cache:/var/cache/netdata
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    networks:
+      - archilab-network
+
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: archilab-vaultwarden
+    restart: unless-stopped
+    environment:
+      DOMAIN: "https://vaultwarden.localhost:8443"
+      SIGNUPS_ALLOWED: "false"
+    volumes:
+      - vaultwarden-data:/data
+    networks:
+      - archilab-network
+
+  traefik:
+    image: traefik:v3
+    container_name: archilab-traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.file.filename=/etc/traefik/dynamic.yaml"
+      - "--providers.file.watch=true"
+      - "--log.level=INFO"
+    ports:
+      - "127.0.0.1:8443:443"
+    volumes:
+      - ./traefik/dynamic.yaml:/etc/traefik/dynamic.yaml:ro
+      - ./traefik/certs:/certs:ro
+    networks:
+      - archilab-network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: archilab-n8n
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5679:5678"
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_EDITOR_BASE_URL: "http://localhost:5679"
+      GENERIC_TIMEZONE: Europe/Paris
+      TZ: Europe/Paris
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_RUNNERS_ENABLED: "true"
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - archilab-network
+
+volumes:
+  kuma-data:
+  gitlab-config:
+  gitlab-logs:
+  gitlab-data:
+  runner-config:
+  netdata-config:
+  netdata-lib:
+  netdata-cache:
+  vaultwarden-data:
+  n8n-data:
+
+networks:
+  archilab-network:
+    driver: bridge

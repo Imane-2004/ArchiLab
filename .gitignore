@@ -1,0 +1,23 @@
+# Certificats et cles privees
+traefik/certs/
+*.pem
+*.key
+
+# Secrets et identifiants
+.env
+.env.*
+secrets/
+config.toml
+
+# Logs
+*.log
+homepage/logs/
+
+# Donnees locales
+*.db
+*.sqlite
+data/
+backups/
+
+# VS Code
+.vscode/
